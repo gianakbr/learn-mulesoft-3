@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:json="http://www.mulesoft.org/schema/mule/json"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd">
+
+<spring:beans>
+	<spring:bean name="TestInvoke" class="com.example.TestInvoke"/>
+	</spring:beans>
+	<http:listener-config name="HTTP_Listener_Configuration" host="0.0.0.0" port="8081" doc:name="HTTP Listener Configuration"/>
+	
+	<flow name="calculator-invoke">
+		<http:listener config-ref="HTTP_Listener_Configuration" path="/v1/calculator"  doc:name="HTTP"/>
+		<set-variable variableName="operator" value="#[payload.operator]" doc:name="Variable-operasi"/>
+		<set-variable variableName="angka1" value="#[payload.angka1]" doc:name="Variable-angka1"/>
+		<set-variable variableName="angka2" value="#[payload.angka2]" doc:name="Variable-angka2"/>
+		
+		<choice doc:name="Choice">
+	    <when expression="#[flowVars.operator == '+']" >
+	      <invoke object-ref="TestInvoke" method="methodTambah" methodArguments="#[flowVars.angka1], #[flowVars.angka2], #[flowVars.operator]" methodArgumentTypes="java.lang.Integer, java.lang.Integer, java.lang.String" doc:name="Invoke"/>
+			<json:object-to-json-transformer doc:name="Object to JSON"/>	    
+	    </when>
+	    <when expression="#[flowVars.operator == '-']" >
+	      <invoke object-ref="TestInvoke" method="methodKurang" methodArguments="#[flowVars.angka1], #[flowVars.angka2], #[flowVars.operator]" methodArgumentTypes="java.lang.Integer, java.lang.Integer, java.lang.String" doc:name="Invoke"/>
+	      <json:object-to-json-transformer doc:name="Object to JSON"/>
+	    </when>
+	     <when expression="#[flowVars.operator == '/']" >
+	      <invoke object-ref="TestInvoke" method="methodBagi" methodArguments="#[flowVars.angka1], #[flowVars.angka2], #[flowVars.operator]" methodArgumentTypes="java.lang.Integer, java.lang.Integer, java.lang.String" doc:name="Invoke"/>
+	      <json:object-to-json-transformer doc:name="Object to JSON"/>
+	    </when>
+	     <when expression="#[flowVars.operator == '*']" >
+	      <invoke object-ref="TestInvoke" method="methodKali" methodArguments="#[flowVars.angka1], #[flowVars.angka2], #[flowVars.operator]" methodArgumentTypes="java.lang.Integer, java.lang.Integer, java.lang.String" doc:name="Invoke"/>
+	      <json:object-to-json-transformer doc:name="Object to JSON"/>
+	    </when>
+		
+		<otherwise>
+	      <flow-ref name="operator-tidak-dikenal" doc:name="reply-in-default-languageSub_Flow" />
+	    </otherwise>	 
+		</choice>		
+		<logger level="INFO" doc:name="Log the reply" message='#[payload]'/>
+	</flow>
+	<sub-flow name="operator-tidak-dikenal" >
+		<logger level="INFO" doc:name="Logger" message="Operator tidak dapat diproses. "/>
+		<set-payload value="operator salah!!" doc:name="operator salah" />
+	</sub-flow>
+	
+</mule>

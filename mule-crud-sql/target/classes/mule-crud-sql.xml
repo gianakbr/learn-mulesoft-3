@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd">
+	<http:listener-config name="HTTP_Listener_Configuration" host="0.0.0.0" port="8081" doc:name="HTTP Listener Configuration"/>
+	<db:mysql-config name="MySQL_Configuration" host="localhost" port="3306" user="root" database="mule_test" doc:name="MySQL Configuration"/>
+	<flow name="method-select">
+		<http:listener config-ref="HTTP_Listener_Configuration" path="/v1/select" allowedMethods="GET" doc:name="HTTP"/>
+		<db:select config-ref="MySQL_Configuration" doc:name="Database">
+			<db:parameterized-query><![CDATA[SELECT * FROM employees]]></db:parameterized-query>
+		</db:select>
+		<json:object-to-json-transformer doc:name="Object to JSON"/>
+		<set-property propertyName="content-type" value="applicaiton/json" doc:name="Property"/>
+	</flow>
+	<flow name="method-insert">
+		<http:listener config-ref="HTTP_Listener_Configuration" path="/v1/insert" allowedMethods="POST" doc:name="HTTP"/>
+		<logger message="#[payload.employee_name], #[payload.jenis_kelamin]" level="INFO" doc:name="Logger"/>
+		<db:insert config-ref="MySQL_Configuration" doc:name="Database">
+			<db:parameterized-query><![CDATA[INSERT INTO employees (employee_name, jenis_kelamin) VALUES (#[payload.employee_name], #[payload.jenis_kelamin])]]></db:parameterized-query>
+		</db:insert>
+		<set-payload value="{&quot;message&quot; : &quot;add data succesfully&quot;}" doc:name="Set Payload"/>
+		<set-property propertyName="content-type" value="application/json" doc:name="Property"/>
+	</flow>
+	<flow name="method-delete">
+		<http:listener config-ref="HTTP_Listener_Configuration" path="/v1/delete" allowedMethods="DELETE" doc:name="HTTP"/>
+		<logger message="#[payload.id]" level="INFO" doc:name="Logger"/>
+		<db:delete config-ref="MySQL_Configuration" doc:name="Database">
+			<db:parameterized-query><![CDATA[DELETE FROM employees WHERE id=#[payload.id]]]></db:parameterized-query>
+		</db:delete>
+		<set-payload value="{&quot;message&quot; : &quot;delete data succesfully&quot;}" doc:name="Set Payload"/>
+		<set-property propertyName="content-type" value="application/json" doc:name="Property"/>
+	</flow>
+	<flow name="method-update">
+		<http:listener config-ref="HTTP_Listener_Configuration" path="/v1/update" allowedMethods="PUT" doc:name="HTTP"/>
+		<logger message="#[payload.id], #[payload.employee_name], #[payload.jenis_kelamin]" level="INFO" doc:name="Logger"/>
+		<db:update config-ref="MySQL_Configuration" doc:name="Database">
+			<db:parameterized-query><![CDATA[UPDATE employees SET employee_name = #[payload.employee_name], jenis_kelamin = #[payload.jenis_kelamin] WHERE id = #[payload.id]]]></db:parameterized-query>
+		</db:update>
+		<set-payload value="{&quot;message&quot; : &quot;update data succesfully&quot;}" doc:name="Set Payload"/>
+		<set-property propertyName="content-type" value="application/json" doc:name="Property"/>
+	</flow>
+</mule>
